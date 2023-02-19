@@ -73,18 +73,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
      */
     @Override
     public Result login(LoginFormDTO loginForm, HttpSession session) {
-        //1.校验手机号
+        // 1.校验手机号
         String phone = loginForm.getPhone();
         if (RegexUtils.isPhoneInvalid(phone))
             return Result.fail("手机号或者验证码错误");
 
-        //2.从Redis获取验证码并校验
+        // 2.从Redis获取验证码并校验
         String code = loginForm.getCode();
         String cacheCode = stringRedisTemplate.opsForValue().get(LOGIN_CODE_KEY + phone);
         if (cacheCode == null || !cacheCode.equals(code))
             return Result.fail("手机号或者验证码错误");
 
-        //3.根据手机号查询对应用户
+        // 3.根据手机号查询对应用户
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(User::getPhone, phone);
         User user = getOne(queryWrapper);
@@ -92,24 +92,24 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             //新用户
             user = creatUser(phone);
 
-        //4.1 生成随机Token
+        // 4.1.生成随机Token
         String token = UUID.randomUUID().toString(true);
 
-        //4.2 将User对象转为Hash存储到Redis
+        // 4.2.将User对象转为Hash存储到Redis
         UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
         Map<String, Object> userMap = BeanUtil.beanToMap(userDTO, new HashMap<>(), CopyOptions.create()
                 .setIgnoreNullValue(true)
                 .setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));
 
-        //4.3 存入Redis
-        //拼接Redis key
+        // 4.3.存入Redis
+        // 拼接Redis key
         String key = LOGIN_USER_KEY + token;
         stringRedisTemplate.opsForHash().putAll(key, userMap);
 
-        //4.4 设置有效期
+        // 4.4.设置有效期
         stringRedisTemplate.expire(key, LOGIN_USER_TTL, TimeUnit.MINUTES);
 
-        //5.将Token返回客户端
+        // 5.将Token返回客户端
         return Result.ok(token);
     }
 

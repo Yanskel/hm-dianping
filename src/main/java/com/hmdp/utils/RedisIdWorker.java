@@ -9,9 +9,7 @@ import java.time.format.DateTimeFormatter;
 
 @Component
 public class RedisIdWorker {
-
     private static final long BEGIN_TIMESTAMP = 1672531200L;
-
     private static final int COUNT_BITS = 32;
 
     private final StringRedisTemplate stringRedisTemplate;
